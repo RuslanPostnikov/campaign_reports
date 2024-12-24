@@ -1,6 +1,7 @@
 import { IsDateString, IsInt, Min, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EventName, EVENT_NAMES } from '../entities/campaign-report.entity';
+import { Type } from 'class-transformer';
 
 export class AggregateCampaignReportDto {
   @ApiProperty({ example: '2024-12-24 00:00:00' })
@@ -16,11 +17,13 @@ export class AggregateCampaignReportDto {
   eventName: EventName;
 
   @ApiProperty({ example: 10 })
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   take: number;
 
   @ApiProperty({ example: 1 })
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page: number;
