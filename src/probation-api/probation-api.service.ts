@@ -1,12 +1,18 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { EventName } from '../campaign-reports/entities/campaign-report.entity';
 
 @Injectable()
 export class ProbationApiService {
   constructor(private readonly configService: ConfigService) {}
 
-  async fetchReports(fromDate: Date, toDate: Date, nextUrl?: string) {
+  async fetchReports(
+    fromDate: Date,
+    toDate: Date,
+    eventName: EventName,
+    nextUrl?: string,
+  ) {
     const url =
       nextUrl ||
       `${this.configService.get('probationApi.url')}/tasks/campaign/reports`;
@@ -15,7 +21,7 @@ export class ProbationApiService {
       : {
           from_date: fromDate.toISOString(),
           to_date: toDate.toISOString(),
-          event_name: 'install',
+          event_name: eventName,
           take: 1000,
         };
 

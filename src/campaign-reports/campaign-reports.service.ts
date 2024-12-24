@@ -1,8 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { CampaignReport } from './entities/campaign-report.entity';
+import {
+  CampaignReport,
+  EVENT_NAMES,
+  EventName,
+} from './entities/campaign-report.entity';
 import { ProbationApiService } from '../probation-api/probation-api.service';
 import { parse } from 'csv-parse/sync';
 
@@ -27,16 +31,19 @@ export class CampaignReportsService {
   }
 
   async fetchReports(fromDate: Date, toDate: Date) {
-    let nextUrl = null;
-    do {
-      const response = await this.probationApiService.fetchReports(
-        fromDate,
-        toDate,
-        nextUrl,
-      );
-      await this.processCampaignReports(response.data.csv);
-      nextUrl = response.data?.pagination?.next;
-    } while (nextUrl);
+    for (const eventName of EVENT_NAMES) {
+      let nextUrl = null;
+      do {
+        const response = await this.probationApiService.fetchReports(
+          fromDate,
+          toDate,
+          eventName,
+          nextUrl,
+        );
+        await this.processCampaignReports(response.data.csv);
+        nextUrl = response.data?.pagination?.next;
+      } while (nextUrl);
+    }
   }
 
   private async processCampaignReports(csvData: string) {
@@ -59,26 +66,26 @@ export class CampaignReportsService {
         .map(
           (report) =>
             `('${report.campaign}', '${report.campaign_id}', '${report.adgroup}', 
-        '${report.adgroup_id}', '${report.ad}', '${report.ad_id}', 
-        '${report.client_id}', '${report.event_name}', '${report.event_time.toISOString()}')`,
+          '${report.adgroup_id}', '${report.ad}', '${report.ad_id}', 
+          '${report.client_id}', '${report.event_name}', '${report.event_time.toISOString()}')`,
         )
         .join(',');
 
       await transactionalEntityManager.query(`
-      INSERT INTO campaign_reports (
-        campaign, campaign_id, adgroup, adgroup_id, ad, ad_id, 
-        client_id, event_name, event_time
-      ) 
-      VALUES ${values}
-      ON CONFLICT (event_time, client_id, event_name) 
-      DO UPDATE SET
-        campaign = EXCLUDED.campaign,
-        campaign_id = EXCLUDED.campaign_id,
-        adgroup = EXCLUDED.adgroup,
-        adgroup_id = EXCLUDED.adgroup_id,
-        ad = EXCLUDED.ad,
-        ad_id = EXCLUDED.ad_id
-    `);
+        INSERT INTO campaign_reports (
+          campaign, campaign_id, adgroup, adgroup_id, ad, ad_id, 
+          client_id, event_name, event_time
+        ) 
+        VALUES ${values}
+        ON CONFLICT (event_time, client_id, event_name) 
+        DO UPDATE SET
+          campaign = EXCLUDED.campaign,
+          campaign_id = EXCLUDED.campaign_id,
+          adgroup = EXCLUDED.adgroup,
+          adgroup_id = EXCLUDED.adgroup_id,
+          ad = EXCLUDED.ad,
+          ad_id = EXCLUDED.ad_id
+      `);
     });
   }
 
@@ -88,19 +95,32 @@ export class CampaignReportsService {
       skip_empty_lines: true,
     });
 
-    return records.map((record) => ({
-      ...record,
-      event_time: new Date(record.event_time),
-    }));
+    return records.map((record) => {
+      if (record.event_name !== 'install' && record.event_name !== 'purchase') {
+        throw new BadRequestException(
+          `Invalid event_name: ${record.event_name}`,
+        );
+      }
+      return {
+        ...record,
+        event_time: new Date(record.event_time),
+      };
+    });
   }
 
   async getAggregatedReports(
     fromDate: Date,
     toDate: Date,
-    eventName: string,
+    eventName: EventName,
     take: number,
     page: number,
   ) {
+    if (eventName !== 'install' && eventName !== 'purchase') {
+      throw new BadRequestException(
+        'Invalid event_name. Must be either "install" or "purchase"',
+      );
+    }
+
     const skip = (page - 1) * take;
     const [results, total] = await this.campaignReportRepository
       .createQueryBuilder('report')
