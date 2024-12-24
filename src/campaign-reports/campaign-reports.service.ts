@@ -34,7 +34,7 @@ export class CampaignReportsService {
         nextUrl,
       );
       await this.saveCampaignReports(response.data.csv);
-      nextUrl = response.data.pagination.next;
+      nextUrl = response.data?.pagination?.next;
       count++;
     } while (count < 3);
   }

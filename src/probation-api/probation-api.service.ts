@@ -29,6 +29,7 @@ export class ProbationApiService {
 
       return response.data;
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         'Failed to fetch reports from Probation API',
         HttpStatus.INTERNAL_SERVER_ERROR,
