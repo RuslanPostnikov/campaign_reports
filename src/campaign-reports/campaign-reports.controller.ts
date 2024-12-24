@@ -11,13 +11,13 @@ export class CampaignReportsController {
     private readonly campaignReportsService: CampaignReportsService,
   ) {}
 
-  // @Post('fetch')
-  // async fetchReports(@Query() fetchDto: FetchCampaignReportDto) {
-  //   return this.campaignReportsService.fetchReports(
-  //     new Date(fetchDto.fromDate),
-  //     new Date(fetchDto.toDate),
-  //   );
-  // }
+  @Post('fetch')
+  async fetchReports(@Query() fetchDto: FetchCampaignReportDto) {
+    return this.campaignReportsService.fetchReports(
+      new Date(fetchDto.fromDate),
+      new Date(fetchDto.toDate),
+    );
+  }
 
   @Get('aggregate')
   async getAggregatedReports(

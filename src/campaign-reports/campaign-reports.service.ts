@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-// import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { CampaignReport } from './entities/campaign-report.entity';
-// import { ProbationApiService } from '../probation-api/probation-api.service';
+import { ProbationApiService } from '../probation-api/probation-api.service';
 import { parse } from 'csv-parse/sync';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class CampaignReportsService {
@@ -12,33 +13,31 @@ export class CampaignReportsService {
 
   constructor(
     @InjectRepository(CampaignReport)
-    private campaignReportRepository: Repository<CampaignReport>,
-    // private probationApiService: ProbationApiService,
+    private readonly campaignReportRepository: Repository<CampaignReport>,
+    private readonly probationApiService: ProbationApiService,
   ) {}
 
   // @Cron(CronExpression.EVERY_HOUR)
-  // async fetchHourlyReports() {
-  //   const now = new Date();
-  //   const startOfDay = new Date(
-  //     now.getFullYear(),
-  //     now.getMonth(),
-  //     now.getDate(),
-  //   );
-  //   await this.fetchReports(startOfDay, now);
-  // }
+  async fetchHourlyReports() {
+    const now = dayjs().toDate();
+    const startOfDay = dayjs().startOf('d').toDate();
+    await this.fetchReports(startOfDay, now);
+  }
 
-  // async fetchReports(fromDate: Date, toDate: Date) {
-  //   let nextUrl = null;
-  //   do {
-  //     const response = await this.probationApiService.fetchReports(
-  //       fromDate,
-  //       toDate,
-  //       nextUrl,
-  //     );
-  //     await this.saveCampaignReports(response.data.csv);
-  //     nextUrl = response.data.pagination.next;
-  //   } while (nextUrl);
-  // }
+  async fetchReports(fromDate: Date, toDate: Date) {
+    let count = 1;
+    let nextUrl = null;
+    do {
+      const response = await this.probationApiService.fetchReports(
+        fromDate,
+        toDate,
+        nextUrl,
+      );
+      await this.saveCampaignReports(response.data.csv);
+      nextUrl = response.data.pagination.next;
+      count++;
+    } while (count < 3);
+  }
 
   private async saveCampaignReports(csvData: string) {
     const reports = this.parseCsvData(csvData);
@@ -48,7 +47,7 @@ export class CampaignReportsService {
   }
 
   private parseCsvData(csvData: string): Partial<CampaignReport>[] {
-    const records = parse(csvData, {
+    const records: Partial<CampaignReport>[] = parse(csvData, {
       columns: true,
       skip_empty_lines: true,
     });
