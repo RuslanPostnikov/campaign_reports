@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CampaignReportsModule } from './campaign-reports/campaign-reports.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
+import { ProbationApiModule } from './probation-api/probation-api.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import configuration from './config/configuration';
       inject: [ConfigService],
     }),
     CampaignReportsModule,
+    ProbationApiModule,
   ],
   controllers: [],
   providers: [],
