@@ -16,7 +16,7 @@ export class ProbationApiService {
           from_date: fromDate.toISOString(),
           to_date: toDate.toISOString(),
           event_name: 'install',
-          take: 10,
+          take: 1000,
         };
 
     try {

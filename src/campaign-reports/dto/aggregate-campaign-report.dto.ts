@@ -1,18 +1,19 @@
-import { IsDateString, IsString, IsInt, Min } from 'class-validator';
+import { IsDateString, IsInt, Min, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { EventName, EVENT_NAMES } from '../entities/campaign-report.entity';
 
 export class AggregateCampaignReportDto {
-  @ApiProperty({ example: '2023-06-01 00:00:00' })
+  @ApiProperty({ example: '2024-12-24 00:00:00' })
   @IsDateString()
   fromDate: string;
 
-  @ApiProperty({ example: '2023-06-30 23:59:59' })
+  @ApiProperty({ example: '2024-12-24 23:59:59' })
   @IsDateString()
   toDate: string;
 
-  @ApiProperty({ example: 'install' })
-  @IsString()
-  eventName: string;
+  @ApiProperty({ example: "'install' | 'purchase'" })
+  @IsEnum(EVENT_NAMES)
+  eventName: EventName;
 
   @ApiProperty({ example: 10 })
   @IsInt()

@@ -1,6 +1,10 @@
 import { Entity, Column, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
+export const EVENT_NAMES = ['install', 'purchase'] as const;
+
+export type EventName = (typeof EVENT_NAMES)[number];
+
 @Entity('campaign_reports')
 @Unique(['event_time', 'client_id', 'event_name'])
 export class CampaignReport {
@@ -38,7 +42,7 @@ export class CampaignReport {
 
   @ApiProperty()
   @Column()
-  event_name: string;
+  event_name: EventName;
 
   @ApiProperty()
   @Column()
