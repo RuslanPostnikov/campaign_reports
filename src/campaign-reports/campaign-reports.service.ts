@@ -115,14 +115,9 @@ export class CampaignReportsService {
     take: number,
     page: number,
   ) {
-    if (eventName !== 'install' && eventName !== 'purchase') {
-      throw new BadRequestException(
-        'Invalid event_name. Must be either "install" or "purchase"',
-      );
-    }
-
     const skip = (page - 1) * take;
-    const [results, total] = await this.campaignReportRepository
+
+    const query = this.campaignReportRepository
       .createQueryBuilder('report')
       .select('report.ad_id', 'ad_id')
       .addSelect('DATE(report.event_time)', 'date')
@@ -137,8 +132,12 @@ export class CampaignReportsService {
       .orderBy('date', 'ASC')
       .addOrderBy('ad_id', 'ASC')
       .skip(skip)
-      .take(take)
-      .getManyAndCount();
+      .take(take);
+
+    const [results, total] = await Promise.all([
+      query.getRawMany(),
+      query.getCount(),
+    ]);
 
     return {
       data: results,
