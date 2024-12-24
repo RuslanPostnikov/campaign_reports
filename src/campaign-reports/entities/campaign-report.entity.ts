@@ -1,15 +1,16 @@
 import { Entity, Column, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
-export const EVENT_NAMES = ['install', 'purchase'] as const;
-
-export type EventName = (typeof EVENT_NAMES)[number];
+export enum EventName {
+  INSTALL = 'install',
+  PURCHASE = 'purchase',
+}
 
 @Entity('campaign_reports')
 @Unique(['event_time', 'client_id', 'event_name'])
 export class CampaignReport {
   @ApiProperty()
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: number;
 
   @ApiProperty()
@@ -40,8 +41,11 @@ export class CampaignReport {
   @Column()
   client_id: string;
 
-  @ApiProperty()
-  @Column()
+  @ApiProperty({ enum: EventName })
+  @Column({
+    type: 'enum',
+    enum: EventName,
+  })
   event_name: EventName;
 
   @ApiProperty()

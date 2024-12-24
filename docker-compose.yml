@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres-campaign-reports
+    networks:
+      - app-network
+
+  postgres-campaign-reports:
+    image: postgres:13.5-alpine
+    env_file:
+      - .env
+    ports:
+      - "5435:5432"
+    volumes:
+      - campaign-reports:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  campaign-reports:
+
+networks:
+  app-network:
+    driver: bridge

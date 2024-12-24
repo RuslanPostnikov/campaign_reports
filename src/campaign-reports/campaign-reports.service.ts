@@ -2,11 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import {
-  CampaignReport,
-  EVENT_NAMES,
-  EventName,
-} from './entities/campaign-report.entity';
+import { CampaignReport, EventName } from './entities/campaign-report.entity';
 import { ProbationApiService } from '../probation-api/probation-api.service';
 import { parse } from 'csv-parse/sync';
 
@@ -31,7 +27,7 @@ export class CampaignReportsService {
   }
 
   async fetchReports(fromDate: Date, toDate: Date) {
-    for (const eventName of EVENT_NAMES) {
+    for (const eventName of Object.values(EventName)) {
       let nextUrl = null;
       do {
         const response = await this.probationApiService.fetchReports(
@@ -90,7 +86,7 @@ export class CampaignReportsService {
   }
 
   private parseCsvData(csvData: string): Partial<CampaignReport>[] {
-    const records = parse(csvData, {
+    const records: Partial<CampaignReport>[] = parse(csvData, {
       columns: true,
       skip_empty_lines: true,
     });

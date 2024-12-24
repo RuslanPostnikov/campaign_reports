@@ -7,9 +7,9 @@ export default () => ({
   database: {
     host: process.env.DATABASE_HOST,
     port: parseInt(process.env.DATABASE_PORT, 10) || 5432,
-    username: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    name: process.env.DATABASE_NAME,
+    username: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    name: process.env.POSTGRES_DB,
   },
   probationApi: {
     url: process.env.PROBATION_API_URL,
