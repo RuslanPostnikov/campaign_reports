@@ -10,7 +10,7 @@ This NestJS application manages campaign reports, utilizing PostgreSQL and TypeO
 
 ## Quick Start
 
-1. Clone the repository: git clone https://github.com/your-username/campaign-reports.git cd campaign-reports
+1. Clone the repository: git clone https://github.com/RuslanPostnikov/campaign_reports.git cd campaign-reports
 2. Build and run with Docker: `yarn docker:build`
 
 ## API Documentation
