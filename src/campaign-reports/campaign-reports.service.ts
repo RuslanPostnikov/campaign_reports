@@ -6,6 +6,7 @@ import { CampaignReport, EventName } from './entities/campaign-report.entity';
 import { ProbationApiService } from '../probation-api/probation-api.service';
 import { parse } from 'csv-parse/sync';
 import dayjs from 'dayjs';
+import { AggregatedReportResponse } from './campaign-reports.interfaces';
 
 @Injectable()
 export class CampaignReportsService {
@@ -45,37 +46,55 @@ export class CampaignReportsService {
     eventName: EventName,
     take: number,
     page: number,
-  ) {
+  ): Promise<AggregatedReportResponse> {
     const skip = (page - 1) * take;
 
-    const query = this.campaignReportRepository
+    const baseQuery = this.campaignReportRepository
       .createQueryBuilder('report')
-      .select('report.ad_id', 'ad_id')
-      .addSelect('DATE(report.event_time)', 'date')
-      .addSelect('COUNT(*)', 'count')
       .where('report.event_time BETWEEN :fromDate AND :toDate', {
         fromDate,
         toDate,
       })
-      .andWhere('report.event_name = :eventName', { eventName })
+      .andWhere('report.event_name = :eventName', { eventName });
+
+    const resultsQuery = baseQuery
+      .clone()
+      .select('report.ad_id', 'ad_id')
+      .addSelect('DATE(report.event_time)', 'date')
+      .addSelect('COUNT(*)', 'count')
       .groupBy('report.ad_id')
       .addGroupBy('DATE(report.event_time)')
       .orderBy('date', 'ASC')
       .addOrderBy('ad_id', 'ASC')
-      .skip(skip)
-      .take(take);
+      .offset(skip)
+      .limit(take);
 
-    const [results, total] = await Promise.all([
-      query.getRawMany(),
-      query.getCount(),
+    const totalQuery = baseQuery
+      .clone()
+      .select(
+        'COUNT(DISTINCT CONCAT(report.ad_id, DATE(report.event_time)))',
+        'total',
+      );
+
+    const [results, totalResult] = await Promise.all([
+      resultsQuery.getRawMany(),
+      totalQuery.getRawOne(),
     ]);
+
+    const total = parseInt(totalResult.total);
+    const totalPages = Math.ceil(total / take);
 
     return {
       data: results,
       meta: {
-        total,
-        page,
-        take,
+        pagination: {
+          total,
+          totalPages,
+          page,
+          take,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
       },
     };
   }
