@@ -5,23 +5,7 @@ import { lastValueFrom, Observable } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AxiosResponse } from 'axios';
 import { EventName } from '../campaign-reports/entities/campaign-report.entity';
-
-interface ProbationApiResponse {
-  timestamp: number;
-  data: {
-    csv: string;
-    pagination: {
-      next: string | null;
-    };
-  };
-}
-
-interface ReportParams {
-  from_date: string;
-  to_date: string;
-  event_name: EventName;
-  take: number;
-}
+import { ProbationApiResponse, ReportParams } from './probation-api.interfaces';
 
 @Injectable()
 export class ProbationApiService {
@@ -37,8 +21,8 @@ export class ProbationApiService {
   }
 
   async fetchReports(
-    fromDate: Date,
-    toDate: Date,
+    fromDate: string,
+    toDate: string,
     eventName: EventName,
     nextUrl?: string,
   ): Promise<ProbationApiResponse> {
@@ -46,8 +30,8 @@ export class ProbationApiService {
     const params: Partial<ReportParams> = nextUrl
       ? {}
       : {
-          from_date: fromDate.toISOString(),
-          to_date: toDate.toISOString(),
+          from_date: fromDate,
+          to_date: toDate,
           event_name: eventName,
           take: 1000,
         };

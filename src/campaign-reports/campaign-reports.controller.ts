@@ -24,8 +24,8 @@ export class CampaignReportsController {
   @ApiResponse({ status: 200, description: 'Reports fetched successfully' })
   async fetchReports(@Query() fetchDto: FetchCampaignReportDto) {
     return this.campaignReportsService.fetchReports(
-      new Date(fetchDto.fromDate),
-      new Date(fetchDto.toDate),
+      fetchDto.fromDate,
+      fetchDto.toDate,
     );
   }
 

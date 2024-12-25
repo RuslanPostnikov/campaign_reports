@@ -5,6 +5,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { CampaignReport, EventName } from './entities/campaign-report.entity';
 import { ProbationApiService } from '../probation-api/probation-api.service';
 import { parse } from 'csv-parse/sync';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class CampaignReportsService {
@@ -17,16 +18,12 @@ export class CampaignReportsService {
 
   @Cron(CronExpression.EVERY_HOUR)
   async fetchHourlyReports() {
-    const now = new Date();
-    const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
+    const now = dayjs().format('YYYY-MM-DD HH:mm:ss');
+    const startOfDay = dayjs().startOf('d').format('YYYY-MM-DD HH:mm:ss');
     await this.fetchReports(startOfDay, now);
   }
 
-  async fetchReports(fromDate: Date, toDate: Date) {
+  async fetchReports(fromDate: string, toDate: string) {
     for (const eventName of Object.values(EventName)) {
       let nextUrl = null;
       do {
@@ -40,6 +37,47 @@ export class CampaignReportsService {
         nextUrl = response.data?.pagination?.next;
       } while (nextUrl);
     }
+  }
+
+  async getAggregatedReports(
+    fromDate: Date,
+    toDate: Date,
+    eventName: EventName,
+    take: number,
+    page: number,
+  ) {
+    const skip = (page - 1) * take;
+
+    const query = this.campaignReportRepository
+      .createQueryBuilder('report')
+      .select('report.ad_id', 'ad_id')
+      .addSelect('DATE(report.event_time)', 'date')
+      .addSelect('COUNT(*)', 'count')
+      .where('report.event_time BETWEEN :fromDate AND :toDate', {
+        fromDate,
+        toDate,
+      })
+      .andWhere('report.event_name = :eventName', { eventName })
+      .groupBy('report.ad_id')
+      .addGroupBy('DATE(report.event_time)')
+      .orderBy('date', 'ASC')
+      .addOrderBy('ad_id', 'ASC')
+      .skip(skip)
+      .take(take);
+
+    const [results, total] = await Promise.all([
+      query.getRawMany(),
+      query.getCount(),
+    ]);
+
+    return {
+      data: results,
+      meta: {
+        total,
+        page,
+        take,
+      },
+    };
   }
 
   private async processCampaignReports(csvData: string) {
@@ -102,46 +140,5 @@ export class CampaignReportsService {
         event_time: new Date(record.event_time),
       };
     });
-  }
-
-  async getAggregatedReports(
-    fromDate: Date,
-    toDate: Date,
-    eventName: EventName,
-    take: number,
-    page: number,
-  ) {
-    const skip = (page - 1) * take;
-
-    const query = this.campaignReportRepository
-      .createQueryBuilder('report')
-      .select('report.ad_id', 'ad_id')
-      .addSelect('DATE(report.event_time)', 'date')
-      .addSelect('COUNT(*)', 'count')
-      .where('report.event_time BETWEEN :fromDate AND :toDate', {
-        fromDate,
-        toDate,
-      })
-      .andWhere('report.event_name = :eventName', { eventName })
-      .groupBy('report.ad_id')
-      .addGroupBy('DATE(report.event_time)')
-      .orderBy('date', 'ASC')
-      .addOrderBy('ad_id', 'ASC')
-      .skip(skip)
-      .take(take);
-
-    const [results, total] = await Promise.all([
-      query.getRawMany(),
-      query.getCount(),
-    ]);
-
-    return {
-      data: results,
-      meta: {
-        total,
-        page,
-        take,
-      },
-    };
   }
 }
