@@ -10,7 +10,6 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:database": "docker volume create campaign-reports && docker-compose -f docker/postgres.compose.yaml up --build --no-recreate",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
@@ -22,8 +21,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "migration:generate": "npx typeorm-ts-node-commonjs migration:generate -d src/data-source.ts -p ./scripts/migrations/migrations",
+    "migration:revert": "npx typeorm-ts-node-commonjs typeorm migration:revert -d src/data-source.ts",
     "migration:run": "npx typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
-    "migration:revert": "npx typeorm-ts-node-commonjs typeorm migration:revert -d src/data-source.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^3.1.3",
